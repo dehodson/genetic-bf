@@ -203,9 +203,12 @@ Distance away: <span id="disty"></span></p>
 				string = symbols[Math.floor(Math.random()*symbols.length)] + string;
 			}else if(coob > .95 && string.length < maxLength){
 				string = string + symbols[Math.floor(Math.random()*symbols.length)];
-			}else if(coob > .90){
-				var splitpos = Math.floor(Math.random()*string.length)
-				string = string.slice(0, splitpos) + string.slice(splitpos);
+			}else if(coob > .90 && string.length < maxLength){
+				var splitpos = Math.floor(Math.random()*string.length);
+				string = string.slice(0, splitpos) + symbols[Math.floor(Math.random()*symbols.length)] + string.slice(splitpos);
+			}else if(coob < .10){
+				var splitpos = Math.floor(Math.random()*string.length - 1) + 1;
+				string = string.slice(0, splitpos - 1) + string.slice(splitpos);
 			}else{
 				string = setCharAt(string, Math.floor(Math.random()*string.length), symbols[Math.floor(Math.random()*symbols.length)]);
 			}
@@ -262,7 +265,7 @@ Distance away: <span id="disty"></span></p>
 			document.getElementById("output").innerText = programs[0][2];
 			document.getElementById("disty").innerText = programs[0][0];
 			document.getElementById("code").innerText = programs[0][1];
-			console.log("Generation "+generation.toString()+": Best is "+programs[0][0].toString()+" away. "+programs[0][1]+" outputs "+programs[0][2]);
+			//console.log("Generation "+generation.toString()+": Best is "+programs[0][0].toString()+" away. "+programs[0][1]+" outputs "+programs[0][2]);
 			if(programs[0][0] == 0){
 				window.clearInterval(interval);
 			}
