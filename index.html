@@ -26,32 +26,33 @@ Distance away: <span id="disty"></span></p>
 	var alphabet = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"];
 
 	function dist(a, b){
-		if(a.length == 0) return b.length; 
-		if(b.length == 0) return a.length; 
+		if(a.length == 0) return b.length * 26; 
+		if(b.length == 0) return a.length * 26; 
 
 		var matrix = [];
 
 		// increment along the first column of each row
 		var i;
 		for(i = 0; i <= b.length; i++){
-			matrix[i] = [i];
+			matrix[i] = [i * 26];
 		}
 
 		// increment each column in the first row
 		var j;
 		for(j = 0; j <= a.length; j++){
-			matrix[0][j] = j;
+			matrix[0][j] = j * 26;
 		}
 
 		// Fill in the rest of the matrix
 		for(i = 1; i <= b.length; i++){
 			for(j = 1; j <= a.length; j++){
-				if(b.charAt(i-1) == a.charAt(j-1)){
+				diff = Math.abs(b.charCodeAt(i-1) - a.charCodeAt(j-1));
+				if(diff == 0){
 					matrix[i][j] = matrix[i-1][j-1];
 				} else {
-					matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
-					Math.min(matrix[i][j-1] + 1, // insertion
-					matrix[i-1][j] + 1)); // deletion
+					matrix[i][j] = Math.min(matrix[i-1][j-1] + diff, // substitution
+					Math.min(matrix[i][j-1] + 26, // insertion
+					matrix[i-1][j] + 26)); // deletion
 				}
 			}
 		}
