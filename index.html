@@ -1,0 +1,272 @@
+<!doctype html>
+<html>
+<head>
+	<title>Brainfuck GENER8R</title>
+</head>
+<body>
+Target:<br/>
+<textarea id="source">
+</textarea><br />
+<input type="button" value="Start" onclick="startRunning();"><input type="button" value="Stop" onclick="window.clearInterval(interval)"><br />
+<p>Generation: <span id="generation"></span><br />
+Best code: <span id="code"></span><br />
+Program output: <span id="output"></span><br />
+Distance away: <span id="disty"></span></p>
+<script>
+	var stack   = [0];
+	var pointer = 0;
+	var code    = "";
+	var output  = "";
+	var ref     = "1337";
+	var failed  = false;
+	var generation = 0;
+	var programs = [];
+	var interval = null;
+	var maxLength = 100;
+	var alphabet = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"];
+
+	function dist(a, b){
+		if(a.length == 0) return b.length; 
+		if(b.length == 0) return a.length; 
+
+		var matrix = [];
+
+		// increment along the first column of each row
+		var i;
+		for(i = 0; i <= b.length; i++){
+			matrix[i] = [i];
+		}
+
+		// increment each column in the first row
+		var j;
+		for(j = 0; j <= a.length; j++){
+			matrix[0][j] = j;
+		}
+
+		// Fill in the rest of the matrix
+		for(i = 1; i <= b.length; i++){
+			for(j = 1; j <= a.length; j++){
+				if(b.charAt(i-1) == a.charAt(j-1)){
+					matrix[i][j] = matrix[i-1][j-1];
+				} else {
+					matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
+					Math.min(matrix[i][j-1] + 1, // insertion
+					matrix[i-1][j] + 1)); // deletion
+				}
+			}
+		}
+
+		return matrix[b.length][a.length];
+	};
+
+	function right(){
+		pointer += 1;
+
+		if(pointer > stack.length - 1){
+			stack.push(0);
+		}
+	}
+
+	function left(){
+		pointer -= 1;
+	}
+
+	function inc(){
+		stack[pointer] += 1;
+	}
+
+	function dec(){
+		stack[pointer] -= 1;
+	}
+
+	function out(){
+		var num = stack[pointer];
+		if(typeof(num) !== 'undefined'){
+			if(num >= 0 && num <= 25){
+				output += alphabet[num];
+			}
+		}
+	}
+
+	function in_(){
+		var input = prompt("Input", "");
+		stack[pointer] = input.charCodeAt(0);
+	}
+
+	function start_loop(){
+		if(stack[pointer] == 0){
+			var bal = 1;
+			var time = 0;
+			do{
+				i++;
+				if     (code[i] == '['){bal++;}
+				else if(code[i] == ']'){bal--;}
+				time++;
+				if(time > maxLength){
+					failed = true;
+					return -1;
+				}
+			}while(bal != 0);
+		}
+		return 0;
+	}
+
+	function end_loop(){
+		var bal = 0;
+		var time = 0;
+		do{
+			if     (code[i] == '['){bal++;}
+			else if(code[i] == ']'){bal--;}
+			i--;
+			time++;
+			if(time > maxLength){
+				failed = true;
+				return -1;
+			}
+		}while(bal != 0);
+		return 0;
+	}
+
+	function run(){
+		stack   = [0];
+		pointer = 0;
+		output  = "";
+		failed = false;
+
+		var instructions = 0;
+
+		for (i = 0, len = code.length; i < len; i++) {
+			if(code[i] == ">"){
+				right();
+			}else if(code[i] == "<"){
+				left();
+			}else if(code[i] == "+"){
+				inc();
+			}else if(code[i] == "-"){
+				dec();
+			}else if(code[i] == "."){
+				out();
+			}else if(code[i] == ","){
+				in_();
+			}else if(code[i] == "["){
+				if(start_loop() == -1){
+					break;
+				}
+			}else if(code[i] == "]"){
+				if(end_loop() == -1){
+					break;
+				}
+			}
+
+			instructions++;
+
+			if(instructions > 100){
+				failed = true;
+				break;
+			}
+		}
+
+		return output;
+	}
+
+	function generate(){
+		var symbols = ["<", "+", "-", ".", "[", "]"];
+		var string = "";
+		var length = 0;
+
+		while(length < maxLength && Math.random() < .95){
+			length++;
+			string += symbols[Math.floor(Math.random()*symbols.length)];
+		}
+
+		return string;
+	}
+
+	function setCharAt(str,index,chr) {
+		if(index > str.length-1) return str;
+		return str.substr(0,index) + chr + str.substr(index+1);
+	}
+
+	function mutate(whatevs){
+		var symbols = ["<", "+", "-", ".", "[", "]"];
+		if(typeof(whatevs) !== "undefined"){
+			var string = whatevs;
+		}else{
+			var string = "+";
+		}
+
+		while(Math.random() < .95){
+			var coob = Math.random();
+
+			if(coob < .5 && string.length < maxLength){
+				string = symbols[Math.floor(Math.random()*symbols.length)] + string;
+			}else if(coob > .95 && string.length < maxLength){
+				string = string + symbols[Math.floor(Math.random()*symbols.length)];
+			}else if(coob > .90){
+				var splitpos = Math.floor(Math.random()*string.length)
+				string = string.slice(0, splitpos) + string.slice(splitpos);
+			}else{
+				string = setCharAt(string, Math.floor(Math.random()*string.length), symbols[Math.floor(Math.random()*symbols.length)]);
+			}
+		}
+
+		return string;
+	}
+
+	function sortFunction(a, b) {
+		if (a[0] === b[0]) {
+			return 0;
+		}
+		else {
+			return (a[0] < b[0]) ? -1 : 1;
+		}
+	}
+
+	function genandrun(){
+		if(generation == 0){
+			for(var i = 0; i < 100; i++){
+				code = generate();
+				var result = run();
+				var distance = dist(result, ref);
+				if(failed || result.length == 0){
+					distance = 99999999;
+				}
+				programs.push([distance, code, result]);
+			}
+		} else {
+			for(var i = 0; i < 50; i++){
+				programs.pop();
+			}
+			for(var i = 0; i < 50; i++){
+				code = mutate(programs[i][1]);
+				var result = run();
+				var distance = dist(result, ref);
+				if(failed || result.length == 0){
+					distance = 99999999;
+				}
+				programs.push([distance, code, result]);
+			}
+		}
+
+		generation++;
+
+		programs.sort(sortFunction);
+	}
+
+	function startRunning(){
+		ref = document.getElementById("source").value;
+		interval = window.setInterval(function(){
+			genandrun();
+			document.getElementById("generation").innerText = generation.toString();
+			document.getElementById("output").innerText = programs[0][2];
+			document.getElementById("disty").innerText = programs[0][0];
+			document.getElementById("code").innerText = programs[0][1];
+			console.log("Generation "+generation.toString()+": Best is "+programs[0][0].toString()+" away. "+programs[0][1]+" outputs "+programs[0][2]);
+			if(programs[0][0] == 0){
+				window.clearInterval(interval);
+			}
+		}, 1);
+	}
+</script>
+</body>
+</html>
